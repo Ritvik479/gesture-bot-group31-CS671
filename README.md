@@ -74,11 +74,8 @@ Webcam → MediaPipe extracts body skeleton → LSTM classifies gesture → mapp
 1. Nothing is hardcoded — everything goes through config.py
 2. Each module must work in isolation before integration
 3. We record the backup demo video no matter what
-Note: Use `pytorch` instead of `tensorflow` as the deep learning library. This is the library written in `requirements.txt` anyway. `pytorch` has a slightly different installation command:
-```python
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-```
 
+Note: Use `pytorch` instead of `tensorflow` as the deep learning library. This is the library written in `requirements.txt` anyway. `mujoco` only works with python versions <`3.12`.
 ## Code to create virtual environment and install dependencies
 ```python
 python -m venv venv
