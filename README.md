@@ -75,4 +75,11 @@ Webcam → MediaPipe extracts body skeleton → LSTM classifies gesture → mapp
 2. Each module must work in isolation before integration
 3. We record the backup demo video no matter what
 
+## Code to create virtual environment and install dependencies
+```python
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
 Let's go 🚀
