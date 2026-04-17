@@ -1,3 +1,36 @@
+## File Structure
+gesture-bot/
+│
+├── data/
+│   ├── raw/                        # .npy files straight from collection script
+│   └── processed/                  # normalized, windowed, train/val split
+│
+├── collection/
+│   ├── collect_gestures.py         # webcam + MediaPipe data collection tool
+│   └── verify_dataset.py           # visualizes saved sequences to sanity check
+│
+├── training/
+│   ├── preprocess.py               # normalization, sliding window, train/val split
+│   ├── model.py                    # LSTM architecture definition
+│   ├── train.py                    # training loop, saves best model
+│   └── evaluate.py                 # confusion matrix, per-class accuracy
+│
+├── inference/
+│   ├── gesture_recognizer.py       # loads model, runs sliding window on live feed
+│   └── command_mapper.py           # gesture label → robot action string
+│
+├── simulation/
+│   ├── humanoid.xml                # MuJoCo humanoid model (or fetch built-in)
+│   └── sim_controller.py           # receives action strings, applies to MuJoCo
+│
+├── display/
+│   └── compositor.py              # tiles webcam + skeleton + sim into one window
+│
+├── main.py                         # entry point, wires everything together
+├── config.py                       # all constants in one place
+├── requirements.txt
+└── README.md
+
 ## Explanation of file contents
 ### `config.py`
 Single source of truth for every constant. Gesture class names and their integer labels, number of frames per window (30), confidence threshold for command firing (e.g. 0.85), webcam resolution, MuJoCo model path, action mappings. Every other file imports from here — nothing is hardcoded anywhere else.
