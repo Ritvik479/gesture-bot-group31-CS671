@@ -1,63 +1,43 @@
-# ─────────────────────────────────────────────
 # Python
-# ─────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-
-# Virtual environments
-venv/
+.env
 .venv/
+venv/
 env/
 
-# ─────────────────────────────────────────────
-# Data — raw .npy files can get large fast
-# ─────────────────────────────────────────────
-data/raw/*.npy
-data/processed/*.npy
-data/processed/*.npz
+# Model weights (large binaries — generate locally)
+models/*.pth
+models/*.pt
+models/*.onnx
 
-# Keep the folder structure in the repo
-!data/raw/.gitkeep
-!data/processed/.gitkeep
+# MuJoCo assets (sourced from unitree_rl_gym externally)
+models/*.xml
+models/*.mjb
 
-# Metadata CSV is tracked (it's small and useful)
-# so data/raw/metadata.csv is NOT ignored
+# Datasets (large binaries — generate locally)
+data/*.h5
+data/*.hdf5
+data/*.npz
+data/*.csv
 
-# ─────────────────────────────────────────────
-# Models — binary, large, not version-controlled
-# ─────────────────────────────────────────────
-models/
-logs/
+# Keep directory structure
+!models/.gitkeep
+!data/.gitkeep
 
-# ─────────────────────────────────────────────
-# MuJoCo
-# ─────────────────────────────────────────────
-*.mjb
-*.mjcf.bak
-
-# ─────────────────────────────────────────────
-# OS clutter
-# ─────────────────────────────────────────────
+# OS
 .DS_Store
 Thumbs.db
-desktop.ini
 
-# ─────────────────────────────────────────────
-# IDEs
-# ─────────────────────────────────────────────
+# IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# ─────────────────────────────────────────────
-# Jupyter (if anyone experiments in notebooks)
-# ─────────────────────────────────────────────
-.ipynb_checkpoints/
-*.ipynb
+# Logs / outputs
+*.log
+*.out
+annotated_*.mp4
+
+models/rl_policy.pt
+models/g1/
