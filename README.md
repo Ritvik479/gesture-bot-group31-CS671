@@ -32,11 +32,11 @@ The system recognises 5 distinct body poses, each mapped to a specific robot arm
 
 | # | Gesture | How to perform it | Robot response |
 |---|---|---|---|
-| 1 | **T-Pose** | Stand upright, both arms extended horizontally at shoulder height | Arms held out straight to sides — robot mirrors the pose |
-| 2 | **Hands Up** | Both arms raised fully above the head, elbows straight | Both arms raised overhead — surrender / attention pose |
-| 3 | **Right Point** | Right arm extended forward at shoulder height, left arm at rest | Right arm points straight ahead, left arm stays neutral |
-| 4 | **Cross Arms** | Both forearms crossed at chest level, hands near opposite shoulders | Arms folded inward across the chest — halt / stop pose |
-| 5 | **Left Salute** | Left elbow bent 90°, left hand raised to head height; right arm at rest | Left arm raised in a salute, right arm stays neutral |
+| 1 | **T-Pose** | Stand upright, both arms extended horizontally at shoulder height | Arms held out straight to sides — robot mirrors the neutral reference pose |
+| 2 | **Rotating Arms** | Extend both arms out and trace large circles with both hands simultaneously | Robot arms sweep in a continuous outward rotation — used as a wave / attention signal |
+| 3 | **Adaab** | Stand straight, raise right hand to forehead level with palm inward, slight bow of the head | Robot raises right arm in a respectful greeting salute, left arm remains at rest |
+| 4 | **Boxing Defence** | Bring both fists up to face level, elbows bent and tucked inward, chin down | Both robot arms come up in a guard position — elbows forward, hands at head height |
+| 5 | **Arms Sideways — Alternating** | Raise left arm out to the side while right stays down, then switch; alternate slowly | Robot mirrors the alternating lateral raises — left arm up while right is down, and vice versa |
 
 Each gesture is recorded as a separate labelled dataset using `capture.py` and the single IL brain (`G1_bc_brain.pth`) is trained across all of them together. At inference time, the brain continuously regresses the arm joint angles that best match whatever pose the person in front of the camera is holding.
 
