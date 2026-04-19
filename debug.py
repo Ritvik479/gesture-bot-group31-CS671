@@ -27,6 +27,8 @@ import sys
 import time
 from pathlib import Path
 
+from src.mp2mujoco import DOF
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # HELPERS
@@ -70,9 +72,9 @@ def stage_mp2mujoco() -> bool:
         converter = MediaPipeToG1()
         lms       = [FakeLM() for _ in range(33)]
         frame     = converter.convert(lms)
-
-        assert frame.angles.shape == (23,),  f"Expected (23,), got {frame.angles.shape}"
-        assert DOF == 23,                    f"Expected DOF=23, got {DOF}"
+        
+        assert frame.angles.shape == (DOF,),  f"Expected ({DOF},), got {frame.angles.shape}"
+        assert DOF == 22,                     f"Expected DOF=22, got {DOF}"
         assert frame.confidence == 1.0,      f"Expected confidence=1.0, got {frame.confidence}"
 
         # Check all angles are within joint limits
