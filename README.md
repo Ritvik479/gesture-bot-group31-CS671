@@ -1,8 +1,8 @@
-# gesture-controlled-g1
+# Pose-Controlled G1 — Real-Time Humanoid Teleoperation via Body Gestures
 
 **Gesture & Pose-Controlled Autonomous Interface for the Unitree G1 Humanoid**
 
-A real-time teleoperation system that maps human body poses — captured via webcam and MediaPipe — to joint-level control of the Unitree G1 humanoid robot in a MuJoCo simulation. Arm motion is driven by a behavioural cloning (imitation learning) brain trained on recorded pose data. Leg locomotion is handled by a pre-trained RL walking policy.
+A real-time teleoperation system that maps human body poses — captured via webcam and MediaPipe — to joint-level control of the Unitree G1 humanoid robot in a MuJoCo simulation. Arm motion is driven by a single behavioural cloning (imitation learning) brain trained on recorded pose data. Leg locomotion is handled by a pre-trained RL walking policy.
 
 ---
 
@@ -26,6 +26,22 @@ Course: **CS-671 Deep Learning and Applications**
 
 ---
 
+## Supported Gestures
+
+The system recognises 5 distinct body poses, each mapped to a specific robot arm configuration:
+
+| # | Gesture | How to perform it | Robot response |
+|---|---|---|---|
+| 1 | **T-Pose** | Stand upright, both arms extended horizontally at shoulder height | Arms held out straight to sides — robot mirrors the pose |
+| 2 | **Hands Up** | Both arms raised fully above the head, elbows straight | Both arms raised overhead — surrender / attention pose |
+| 3 | **Right Point** | Right arm extended forward at shoulder height, left arm at rest | Right arm points straight ahead, left arm stays neutral |
+| 4 | **Cross Arms** | Both forearms crossed at chest level, hands near opposite shoulders | Arms folded inward across the chest — halt / stop pose |
+| 5 | **Left Salute** | Left elbow bent 90°, left hand raised to head height; right arm at rest | Left arm raised in a salute, right arm stays neutral |
+
+Each gesture is recorded as a separate labelled dataset using `capture.py` and the single IL brain (`G1_bc_brain.pth`) is trained across all of them together. At inference time, the brain continuously regresses the arm joint angles that best match whatever pose the person in front of the camera is holding.
+
+---
+
 ## Repository Structure
 
 ```
@@ -45,13 +61,13 @@ gesture-controlled-g1/
 │   └── inference.py       # MuJoCo simulation + IL arm + RL leg control
 │
 ├── models/
-│   └── g1_description/    # ← see note below
-│   └── rl_policy.pt       # ← see note below
+│   └── g1_description/    # ← see Prerequisites below
+│   └── rl_policy.pt       # ← see Prerequisites below
 │
 ├── data/
 │   └── .gitkeep
 │
-├── debug.py               # Pipeline diagnostic script (project root)
+├── debug.py               # Pipeline diagnostic script (run from project root)
 └── scripts/
     ├── run_capture.sh
     ├── run_vision.sh
@@ -62,16 +78,13 @@ gesture-controlled-g1/
 
 ## Prerequisites — Unitree Assets
 
-`models/rl_policy.pt` and `models/g1_description/` are Unitree's assets distributed under the **BSD-3-Clause** licence. They are not redistributed in this repository.
-
-To obtain them, clone the official Unitree RL gym and copy the relevant files yourself:
+`models/rl_policy.pt` and `models/g1_description/` are Unitree's assets distributed under the **BSD-3-Clause** licence and are not included in this repository. Clone the official Unitree RL gym and copy the relevant files into `models/` yourself:
 
 ```bash
 git clone https://github.com/unitreerobotics/unitree_rl_gym
-# Copy the G1 MuJoCo description and the pre-trained walking policy into models/
+# Copy the G1 MuJoCo scene XML (g1_description/) and the pre-trained
+# walking policy (rl_policy.pt) into this repo's models/ directory.
 ```
-
-For a local hackathon demo, keeping these files locally and adding them to `.gitignore` is fine.
 
 ---
 
@@ -93,7 +106,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> MediaPipe requires Python 3.8–3.11. If `mp.solutions` is unavailable, downgrade:
+> MediaPipe requires Python 3.8–3.11. If you encounter an `mp.solutions` AttributeError, downgrade:
 > `pip install mediapipe==0.10.9`
 
 ---
@@ -105,10 +118,12 @@ pip install -r requirements.txt
    ↓
 vision_node.py   →  MediaPipe pose estimation  →  ZMQ PUB (99 floats)
    ↓
-inference.py     →  IL brain (arms)            →  MuJoCo arm torques
-                 →  RL policy (legs)           →  MuJoCo leg torques
+inference.py     →  IL brain — G1_bc_brain.pth (arms)   →  MuJoCo arm torques
+                 →  RL policy — rl_policy.pt   (legs)   →  MuJoCo leg torques
                  →  Simulation viewer
 ```
+
+A **single IL model** (`G1_bc_brain.pth`) handles all 5 gestures. It is a small MLP (99 → 256 → 128 → 64 → 8) trained end-to-end on MediaPipe world landmark coordinates and regresses 8 arm joint angles (4 per arm; wrists are locked to neutral).
 
 ---
 
@@ -118,18 +133,21 @@ inference.py     →  IL brain (arms)            →  MuJoCo arm torques
 
 ### Step 1 — Record gesture data
 
+Record each gesture separately using `capture.py`. Press **SPACE** to start/stop recording, **S** to save, **Q** to quit.
+
 ```bash
-# Live webcam capture — press SPACE to start/stop recording, S to save, Q to quit
+bash scripts/run_capture.sh t_pose
 bash scripts/run_capture.sh hands_up
+bash scripts/run_capture.sh right_point
+bash scripts/run_capture.sh cross_arms
+bash scripts/run_capture.sh left_salute
 
-# Or manually with more options
-python src/capture.py live --out data/gesture.h5 --label hands_up --complexity 1
+# Or manually with more options:
+python src/capture.py live --out data/gesture.h5 --label t_pose --complexity 1
 
-# Batch processing from an existing video file
-python src/capture.py batch --src recording.mp4 --out data/gesture.h5 --label hands_up
+# Batch processing from an existing video file:
+python src/capture.py batch --src recording.mp4 --out data/t_pose.h5 --label t_pose
 ```
-
-Repeat for each gesture you want to train on, saving to separate `.h5` files or using a single file per label.
 
 ---
 
@@ -137,9 +155,12 @@ Repeat for each gesture you want to train on, saving to separate `.h5` files or 
 
 ```bash
 python src/train.py
+
 # With custom options:
 python src/train.py --dataset data/gesture.h5 --output models/G1_bc_brain.pth --epochs 200
 ```
+
+This trains the single `G1_bc_brain.pth` model across all recorded gesture data.
 
 ---
 
@@ -161,7 +182,7 @@ bash scripts/run_inference.sh
 python src/inference.py --config config/inference_config.yaml
 ```
 
-The MuJoCo viewer will open. Stand in front of your webcam and perform gestures — the G1 robot's arms will mirror your pose in real time while the RL policy keeps it walking.
+The MuJoCo viewer will open. Stand in front of your webcam and perform any of the 5 gestures — the G1 robot's arms will respond in real time while the RL policy keeps it walking.
 
 ---
 
@@ -173,7 +194,7 @@ The MuJoCo viewer will open. Stand in front of your webcam and perform gestures 
 # Run from project root
 python debug.py
 
-# With custom paths
+# With custom paths:
 python debug.py \
   --config config/inference_config.yaml \
   --dataset data/gesture.h5 \
@@ -191,34 +212,34 @@ python debug.py \
 | 4 — ZMQ | vision_node is reachable, receives a valid 99-float message | `vision_node.py` running in another terminal |
 | 5 — Assets | MuJoCo XML and RL TorchScript policy load, joint/actuator counts printed | Unitree assets in `models/` |
 
-Stages 2 and 3 show **SKIP** (not FAIL) if their files don't exist yet — this is expected before capture and training.
-
-For Stage 4, start `vision_node.py` in a separate terminal first, then run `debug.py`. The ZMQ check has a 3-second timeout.
+Stages 2 and 3 show **SKIP** (not FAIL) if their files don't exist yet — this is expected before capture and training. For Stage 4, start `vision_node.py` in a separate terminal first; the ZMQ check has a 3-second timeout.
 
 ---
 
 ## Key Design Decisions
 
+**Single IL model** — One `BehavioralCloningMLP` handles all 5 gestures. Rather than training a separate classifier or one model per gesture, the brain continuously regresses arm joint angles from raw landmark coordinates. The robot naturally interpolates between poses as the person transitions between gestures.
+
 **22 DOF (not 23)** — The waist joints present in the G1 URDF spec are absent from the MuJoCo XML used here. The joint list was reduced accordingly: 6 left leg + 6 right leg + 5 left arm + 5 right arm = 22.
 
-**Hybrid control** — Arms are driven by imitation learning (your MediaPipe pose → BehavioralCloningMLP → joint targets). Legs are driven by a pre-trained RL locomotion policy. This separation means arm teleoperation doesn't interfere with walking stability.
+**Hybrid control** — Arms are driven by imitation learning (MediaPipe pose → IL brain → joint targets). Legs are driven by a pre-trained RL locomotion policy. This separation means arm teleoperation does not interfere with walking stability.
 
-**ZMQ PUB/SUB** — `vision_node.py` and `inference.py` are decoupled processes communicating over ZMQ. This keeps vision latency independent of simulation step time and allows the stale-data guard in `inference.py` to decay arms smoothly to neutral if the camera feed is lost.
+**ZMQ PUB/SUB** — `vision_node.py` and `inference.py` are decoupled processes communicating over ZMQ. Vision latency is independent of simulation step time. If the camera feed is lost, a stale-data guard decays the arms smoothly back to neutral.
 
-**Wrist locking** — Both wrist roll joints are locked to 0.0 in inference. The IL brain outputs 8 values (4 per arm, wrists excluded) to reduce training complexity and avoid noisy wrist predictions from mediapipe hand landmarks.
+**Wrist locking** — Both wrist roll joints are locked to 0.0 in inference. The IL brain outputs 8 values (4 per arm, wrists excluded) to reduce training complexity and avoid noisy wrist predictions from MediaPipe hand landmarks.
 
 ---
 
 ## Troubleshooting
 
 **`mp.solutions` AttributeError on import**
-Use explicit submodule imports instead of `mp.solutions.*` at module level, or downgrade MediaPipe: `pip install mediapipe==0.10.9`
+Use explicit submodule imports or downgrade MediaPipe: `pip install mediapipe==0.10.9`
 
 **Stage 4 ZMQ times out**
 Make sure `vision_node.py` is running in a separate terminal before executing `debug.py`.
 
 **MuJoCo XML not found**
-Check that `xml_path` in `config/inference_config.yaml` points to the correct location of the G1 scene XML from `unitree_rl_gym`.
+Check that `xml_path` in `config/inference_config.yaml` points to the correct location of the G1 scene XML copied from `unitree_rl_gym`.
 
 **Robot falls immediately**
 Verify `config/inference_config.yaml` values for `default_angles`, `kps`, `kds`, and `num_actions` match the RL policy's expected observation space (input=47, output=12).
