@@ -24,10 +24,9 @@ import mediapipe as mp
 import zmq
 
 # ── MediaPipe drawing utils ───────────────────────────────────────────────
-from mediapipe.python.solutions import drawing_utils  as mp_draw
-from mediapipe.python.solutions import drawing_styles as mp_style
-from mediapipe.python.solutions import pose           as mp_pose
-
+mp_draw  = mp.solutions.drawing_utils
+mp_style = mp.solutions.drawing_styles
+mp_pose  = mp.solutions.pose
 
 # ──────────────────────────────────────────────────────────────────────────────
 # POSE SETUP

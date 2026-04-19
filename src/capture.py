@@ -42,9 +42,9 @@ from mp2mujoco import (
     G1Frame,
 )
 
-from mediapipe.python.solutions import pose as mp_pose
-from mediapipe.python.solutions import drawing_utils  as mp_draw
-from mediapipe.python.solutions import drawing_styles as mp_style
+mp_draw  = mp.solutions.drawing_utils
+mp_style = mp.solutions.drawing_styles
+mp_pose  = mp.solutions.pose    
 
 
 # ──────────────────────────────────────────────────────────────────────────────

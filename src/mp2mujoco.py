@@ -59,11 +59,6 @@ class JointSpec:
 
 G1_JOINTS: list[JointSpec] = [
 
-    # ── Waist (3 DOF) ──────────────────────────────────────────────────────
-    JointSpec("waist_yaw",             -2.618,  2.618),
-    JointSpec("waist_roll",            -0.523,  0.523),
-    JointSpec("waist_pitch",           -0.785,  0.785),
-
     # ── Left Leg (6 DOF) ───────────────────────────────────────────────────
     JointSpec("left_hip_pitch",        -1.047,  2.094),
     JointSpec("left_hip_roll",         -0.524,  2.967),
@@ -96,7 +91,7 @@ G1_JOINTS: list[JointSpec] = [
 ]
 
 JOINT_NAMES = [j.name for j in G1_JOINTS]
-DOF         = len(G1_JOINTS)   # 23
+DOF         = len(G1_JOINTS)   # 22
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -431,9 +426,6 @@ class MediaPipeToG1:
         confidence = float(np.mean([lm.visibility for lm in lms]))
         raw        = np.array([[lm.x, lm.y, lm.z] for lm in lms], dtype=np.float32)
 
-        # ── Waist ──────────────────────────────────────────────────────────
-        w_yaw, w_roll, w_pitch = _waist_angles(lms)
-
         # ── Left Leg ───────────────────────────────────────────────────────
         lhp, lhr, lhy  = _hip_angles(lms, "left")
         lk             = _knee_angle(lms, "left")
@@ -456,9 +448,8 @@ class MediaPipeToG1:
 
         # ── Pack in G1 joint order ─────────────────────────────────────────
         angles = np.array([
-            w_yaw, w_roll, w_pitch,           # waist  (3)
             lhp, lhr, lhy, lk, lap, lar,      # L-leg  (6)
-            rhp, rhr, rhy, rk, rap, rar,      # R-leg  (6)
+            rhp, rhr, rhy, rk, rap, rar,       # R-leg  (6)
             lsp, lsr, lsy, le, lwr,            # L-arm  (5)
             rsp, rsr, rsy, re, rwr,            # R-arm  (5)
         ], dtype=np.float32)

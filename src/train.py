@@ -87,8 +87,8 @@ class G1ImitationDataset(Dataset):
         self.X = raw_landmarks.reshape(raw_landmarks.shape[0], -1).astype(np.float32)
 
         # Extract 4 left-arm + 4 right-arm joints (wrists excluded deliberately)
-        left_arm  = all_angles[:, 15:19]   # left_shoulder_pitch/roll/yaw, left_elbow
-        right_arm = all_angles[:, 20:24]   # right_shoulder_pitch/roll/yaw, right_elbow
+        left_arm  = all_angles[:, 12:16]   # left_shoulder_pitch/roll/yaw + elbow
+        right_arm = all_angles[:, 17:21]   # right_shoulder_pitch/roll/yaw + elbow
         self.Y = np.concatenate([left_arm, right_arm], axis=1)  # (N, 8)
 
         print(f"[Dataset] {self.X.shape[0]} frames | "
