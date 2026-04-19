@@ -42,6 +42,10 @@ from mp2mujoco import (
     G1Frame,
 )
 
+from mediapipe.python.solutions import pose as mp_pose
+from mediapipe.python.solutions import drawing_utils  as mp_draw
+from mediapipe.python.solutions import drawing_styles as mp_style
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # DRAWING / OVERLAY UTILITIES
@@ -124,7 +128,7 @@ def _draw_batch_overlay(img, frame: G1Frame | None, frame_idx: int, total: int):
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _make_pose(complexity: int = 1):
-    return mp.solutions.pose.Pose(
+    return mp_pose.Pose(
         static_image_mode        = False,
         model_complexity         = complexity,
         smooth_landmarks         = True,
@@ -146,11 +150,11 @@ def _process_frame(pose, bgr, converter: MediaPipeToG1, ts: float):
             frame = None
 
     if results.pose_landmarks:
-        mp.solutions.drawing_utils.draw_landmarks(
+        mp_draw.draw_landmarks(
             bgr,
             results.pose_landmarks,
-            mp.solutions.pose.POSE_CONNECTIONS,
-            mp.solutions.drawing_styles.get_default_pose_landmarks_style(),
+            mp_pose.POSE_CONNECTIONS,
+            mp_style.get_default_pose_landmarks_style(),
         )
     return bgr, frame
 
@@ -342,8 +346,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # ── live ──────────────────────────────────────────────────────────────────
     L = sub.add_parser("live", help="Real-time webcam capture")
-    L.add_argument("--src",        default=0,
-                   help="Camera index (default 0)")
+    L.add_argument("--src", default=0, type=str,
+               help="Camera index or device path (default 0)")
     L.add_argument("--out",        default="data/gesture.h5",
                    help="Output dataset path  (default: data/gesture.h5)")
     L.add_argument("--label",      default="",

@@ -88,6 +88,7 @@ LEG_JOINT_NAMES = [
     "right_ankle_roll_joint",
 ]
 
+_IL_IDX = [0, 1, 2, 3, None, 4, 5, 6, 7, None]
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 3.  HELPERS
@@ -115,7 +116,7 @@ def get_gravity_orientation(q: np.ndarray) -> np.ndarray:
     return np.array([
         2 * (-qz * qx + qw * qy),
         -2 * (qz * qy + qw * qx),
-        1 - 2 * (qw * qw + qz * qz),
+        1 - 2 * (qx * qx + qy * qy),
     ])
 
 
@@ -166,6 +167,10 @@ def run(config_path: Path, stale_threshold: float) -> None:
     kps                = np.array(cfg["kps"],            dtype=np.float32)
     kds                = np.array(cfg["kds"],            dtype=np.float32)
     default_angles     = np.array(cfg["default_angles"], dtype=np.float32)
+    assert len(default_angles) == num_actions, (
+        f"Config mismatch: default_angles has {len(default_angles)} entries "
+        f"but num_actions={num_actions}. Check inference_config.yaml."
+    )
     ang_vel_scale      = cfg["ang_vel_scale"]
     dof_pos_scale      = cfg["dof_pos_scale"]
     dof_vel_scale      = cfg["dof_vel_scale"]
@@ -203,9 +208,9 @@ def run(config_path: Path, stale_threshold: float) -> None:
     print(f"Connecting to vision node at {zmq_addr} …")
     context = zmq.Context()
     socket  = context.socket(zmq.SUB)
-    socket.connect(zmq_addr)
     socket.setsockopt_string(zmq.SUBSCRIBE, "VISION ")
-    time.sleep(0.5)
+    socket.connect(zmq_addr)
+    time.sleep(1.5)
 
     # ── State ─────────────────────────────────────────────────────────────────
     action            = np.zeros(num_actions,          dtype=np.float32)
@@ -254,18 +259,9 @@ def run(config_path: Path, stale_threshold: float) -> None:
                 il_smoothed = il_action * ema_alpha + il_smoothed * (1.0 - ema_alpha)
 
             # ── 3. UNPACK ARM TARGETS ────────────────────────────────────────
-            # il_smoothed layout: [L-pitch, L-roll, L-yaw, L-elbow,
-            #                      R-pitch, R-roll, R-yaw, R-elbow]
-            arm_target[0] = il_smoothed[0]   # left  shoulder pitch
-            arm_target[1] = il_smoothed[1]   # left  shoulder roll
-            arm_target[2] = il_smoothed[2]   # left  shoulder yaw
-            arm_target[3] = il_smoothed[3]   # left  elbow
-            arm_target[4] = 0.0              # left  wrist  (locked)
-            arm_target[5] = il_smoothed[4]   # right shoulder pitch
-            arm_target[6] = il_smoothed[5]   # right shoulder roll
-            arm_target[7] = il_smoothed[6]   # right shoulder yaw
-            arm_target[8] = il_smoothed[7]   # right elbow
-            arm_target[9] = 0.0              # right wrist  (locked)
+            # IL_IDX maps ARM_JOINT_NAMES index → il_smoothed index (or None = locked to 0)
+            for arm_i, il_i in enumerate(_IL_IDX):
+                arm_target[arm_i] = il_smoothed[il_i] if il_i is not None else 0.0
 
             # ── 4. ARM PD TORQUES ────────────────────────────────────────────
             arm_tau = np.array([

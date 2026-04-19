@@ -23,13 +23,18 @@ import cv2
 import mediapipe as mp
 import zmq
 
+# ── MediaPipe drawing utils ───────────────────────────────────────────────
+from mediapipe.python.solutions import drawing_utils  as mp_draw
+from mediapipe.python.solutions import drawing_styles as mp_style
+from mediapipe.python.solutions import pose           as mp_pose
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # POSE SETUP
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _make_pose(complexity: int):
-    return mp.solutions.pose.Pose(
+    return mp_pose.Pose(
         static_image_mode        = False,
         model_complexity         = complexity,
         smooth_landmarks         = True,
@@ -51,10 +56,6 @@ def run(camera: int, zmq_addr: str, complexity: int) -> None:
     print("Vision Node starting …")
     print(f"  ZMQ publisher bound on {zmq_addr}")
 
-    # ── MediaPipe drawing utils ───────────────────────────────────────────────
-    mp_draw  = mp.solutions.drawing_utils
-    mp_style = mp.solutions.drawing_styles
-    mp_pose  = mp.solutions.pose
 
     # ── Camera ───────────────────────────────────────────────────────────────
     cap = cv2.VideoCapture(camera)

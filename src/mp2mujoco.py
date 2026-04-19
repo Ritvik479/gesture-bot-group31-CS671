@@ -293,10 +293,10 @@ def _ankle_angles(lms, side: str):
     # Sagittal axis = lateral foot direction
     pitch = _signed_angle(shank, foot_long, foot_lat)
 
-    # Roll: foot lateral tilt relative to world-up, projected in coronal plane
-    world_up  = np.array([0., 0., 1.])
-    foot_norm = _unit(np.cross(foot_long, world_up) + 1e-9)  # ≈ medial direction
-    roll = _signed_angle(world_up, _unit(np.cross(foot_long, foot_lat)), foot_long)
+    # Roll: inversion/eversion — tilt of foot_lat away from world_up,
+    # measured around the longitudinal foot axis.
+    world_up = np.array([0., 0., 1.])
+    roll = _signed_angle(world_up, foot_lat, foot_long)
     roll *= (1.0 if side == "left" else -1.0)
 
     return float(pitch), float(roll)
@@ -559,7 +559,7 @@ class DatasetRecorder:
                 confidence  = cf_arr,
                 landmarks   = lm_arr,
                 joint_names = np.array(JOINT_NAMES),
-                label       = np.array(label),
+                label       = np.array(label, dtype=str),
             )
 
         elif fmt == "csv":

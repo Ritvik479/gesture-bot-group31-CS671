@@ -1,2 +1,3 @@
 #!/bin/bash
-python src/capture.py live --out data/gesture.h5 --label "$1"
+LABEL="${1:-unlabelled}"
+python src/capture.py live --out data/gesture.h5 --label "$LABEL"
